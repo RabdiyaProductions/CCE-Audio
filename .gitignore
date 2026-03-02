@@ -1,0 +1,16 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore binary release and audio files (handled outside of version control)
+*.zip
+*.wav
+*.mp3
+*.mid
+*.flac
+*.aif
+.DS_Store
+
+# Local build outputs
+build/
+dist/

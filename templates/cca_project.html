@@ -1,0 +1,708 @@
+{% extends "cca_base.html" %}
+{% set title=project.title %}
+{% block content %}
+<div class="row" style="justify-content:space-between; align-items:flex-start">
+  <div>
+    <h2 style="margin:0">{{ project.title }}</h2>
+    <div class="mut">{{ project.project_code }} • {{ project.studio }} • {{ project.audio_type }} • {{ project.genre }} • BPM {{ project.bpm }} • Key {{ project.musical_key }} • Mood {{ project.mood }}</div>
+    <div class="mut" style="margin-top:6px">Status: <b>{{ project.status }}</b></div>
+  </div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('projects_page') }}">← Projects</a>
+    <a class="btn" href="{{ url_for('exports_page') }}">📦 Exports</a>
+  </div>
+</div>
+
+<div class="row" style="margin-top:12px; gap:8px">
+  <button class="btn" id="tabBtnMain" type="button" onclick="showProjectTab('main')">Project</button>
+  <button class="btn" id="tabBtnMix" type="button" onclick="showProjectTab('mix')">Mix Board</button>
+  <button class="btn" id="tabBtnTimeline" type="button" onclick="showProjectTab('timeline')">Timeline</button>
+</div>
+
+<div id="tabMain">
+<div class="grid" style="margin-top:12px">
+  <div class="card" style="grid-column: span 8;">
+    <h3 style="margin:0 0 10px">Actions</h3>
+    <div class="row">
+      <button class="btn primary" onclick="doPost('/api/generate/pilot', {project_code: '{{ project.project_code }}'}, 'generate_pilot')">⚡ Generate Pilot Pack</button>
+      <button class="btn" onclick="doPost('/api/agents/director', {project_code: '{{ project.project_code }}'}, 'producer_notes')">🎛️ Producer Notes</button>
+      <button class="btn" onclick="doPost('/api/critic/run', {project_code: '{{ project.project_code }}'}, 'critic')">🧪 Critique</button>
+      <button class="btn" onclick="doPost('/api/approve', {project_code: '{{ project.project_code }}'}, 'approve')">✅ Approve</button>
+      <button class="btn" onclick="doPost('/api/export', {project_code: '{{ project.project_code }}', force: false}, 'export')">📦 Export ZIP</button>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h4 style="margin:0 0 10px">Generators</h4>
+      <div class="row">
+        <button class="btn" onclick="doPost('/api/generate/sonic_brand', {project_code: '{{ project.project_code }}'}, 'sonic_brand')">🔊 Sonic Brand</button>
+        <button class="btn" onclick="doPost('/api/generate/podcast_pack', {project_code: '{{ project.project_code }}'}, 'podcast_pack')">🎙️ Podcast Pack</button>
+        <button class="btn" onclick="doPost('/api/generate/voice_pack', {project_code: '{{ project.project_code }}'}, 'voice_pack')">🗣️ Voice Pack</button>
+        <button class="btn" onclick="doPost('/api/generate/score_cue_pack', {project_code: '{{ project.project_code }}'}, 'score_cue_pack')">🎞️ Score Cue</button>
+        <button class="btn" onclick="doPost('/api/generate/sfx_pack', {project_code: '{{ project.project_code }}'}, 'sfx_pack')">💥 SFX Pack</button>
+      </div>
+      <div class="mut" style="margin-top:8px">These create additional pack JSON assets and will be included automatically in the next export ZIP.</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h4 style="margin:0 0 10px">Upload audio (optional)</h4>
+      <form id="uploadForm" method="post" enctype="multipart/form-data" action="/api/upload/audio">
+        <input type="hidden" name="project_code" value="{{ project.project_code }}"/>
+        <div class="row">
+          <input type="file" name="file" />
+          <button class="btn" type="submit">Upload</button>
+        </div>
+        <div class="mut" style="margin-top:8px">WAV analysis uses built-in decoding. Other formats require ffprobe/ffmpeg installed.</div>
+      </form>
+    </div>
+
+
+    <div class="card" style="margin-top:12px">
+      <h4 style="margin:0 0 10px">Audio Utility (P11 → P16)</h4>
+      <div class="mut">Local preview + markers + server tools. Click waveform to place markers.</div>
+      <div class="row" style="margin-top:10px">
+        <input id="utilFile" type="file" accept=".wav,audio/*" style="max-width:520px"/>
+        <button class="btn" type="button" onclick="utilClearMarkers()">🧹 Clear markers</button>
+      </div>
+      <audio id="utilPlayer" controls style="width:100%; margin-top:10px"></audio>
+      <canvas id="waveCanvas" height="120" style="width:100%; margin-top:10px; background:#071023; border:1px solid var(--line); border-radius:12px"></canvas>
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1; min-width:180px">
+          <div class="mut" style="margin-bottom:4px">Trim start (sec)</div>
+          <input id="trimStart" type="number" step="0.01" value="0"/>
+        </div>
+        <div style="flex:1; min-width:180px">
+          <div class="mut" style="margin-bottom:4px">Trim end (sec)</div>
+          <input id="trimEnd" type="number" step="0.01" value="0"/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" type="button" onclick="utilSetTrimFromMarkers()">⏱️ Use first two markers</button>
+        <button class="btn primary" type="button" onclick="serverTrim()">✂️ Server Trim</button>
+        <button class="btn" type="button" onclick="serverSegmentPack()">🧩 Segment Pack ZIP</button>
+        <select id="qcTarget" style="max-width:220px"></select>
+        <button class="btn" type="button" onclick="serverQC()">🎚️ Loudness QC</button>
+      </div>
+      <div id="utilResult" class="mut" style="margin-top:10px"></div>
+      <details style="margin-top:10px">
+        <summary class="mut">Markers JSON</summary>
+        <pre id="markersJson" style="white-space:pre-wrap">[]</pre>
+      </details>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h4 style="margin:0 0 10px">Project notes</h4>
+      <pre class="mut" style="white-space:pre-wrap">{{ project.notes }}</pre>
+      {% if project.reference_notes %}
+        <h4 style="margin:12px 0 6px">Taste / references</h4>
+        <pre class="mut" style="white-space:pre-wrap">{{ project.reference_notes }}</pre>
+      {% endif %}
+      {% if project.lyrics_theme %}
+        <h4 style="margin:12px 0 6px">Lyrics theme</h4>
+        <pre class="mut" style="white-space:pre-wrap">{{ project.lyrics_theme }}</pre>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card" style="grid-column: span 4;">
+    <h3 style="margin:0 0 10px">Latest Exports</h3>
+    {% if exports %}
+      <table>
+        <tr><th>Issue</th><th>File</th></tr>
+        {% for e in exports[:6] %}
+          <tr>
+            <td class="mono">{{ e.issue_ref }}</td>
+            <td><a href="{{ url_for('download_export', filename=e.filename) }}">{{ e.filename }}</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="mut">No exports yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+</div>
+
+<div id="tabMix" class="card" style="margin-top:12px; display:none">
+  <h3 style="margin:0 0 10px">Mix Board</h3>
+  <div class="mut">Create buses (main/effects), assign WAV stems, adjust gain/pan, and render mix WAV.</div>
+  <div class="row" style="margin-top:10px">
+    <input id="mixBusName" placeholder="Bus name (e.g. main)" value="main" style="max-width:220px"/>
+    <button class="btn" type="button" onclick="mixCreateBus()">Save Bus</button>
+    <button class="btn" type="button" onclick="mixRenderBus()">Render Mix</button>
+    <button class="btn" type="button" onclick="mixDeleteBus()">Delete Bus</button>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <select id="mixBusSelect" style="max-width:320px" onchange="mixLoadSelectedBus()"></select>
+    <button class="btn" type="button" onclick="mixAddTrackRow()">+ Track</button>
+  </div>
+  <div id="mixRows" style="margin-top:10px"></div>
+  <div id="mixResult" class="mut" style="margin-top:10px"></div>
+</div>
+
+<div id="tabTimeline" class="card" style="margin-top:12px; display:none">
+  <h3 style="margin:0 0 10px">Timeline Editor</h3>
+  <div class="mut">Drag WAV assets into the timeline lane, then set start/length and optional bus per track.</div>
+  <div class="row" style="margin-top:10px">
+    <input id="timelineName" value="main_timeline" placeholder="Timeline name" style="max-width:220px"/>
+    <button class="btn" type="button" onclick="timelineSave()">Save Timeline</button>
+    <button class="btn" type="button" onclick="timelineRender()">Render Timeline</button>
+    <button class="btn" type="button" onclick="timelineDelete()">Delete Timeline</button>
+    <select id="timelineSelect" style="max-width:280px" onchange="timelineLoadSelected()"></select>
+  </div>
+  <div class="row" style="margin-top:10px; align-items:flex-start">
+    <div class="card" style="flex:1">
+      <h4 style="margin:0 0 8px">Asset Bin (drag)</h4>
+      <div id="timelineAssetBin" class="row" style="flex-wrap:wrap; gap:6px"></div>
+    </div>
+    <div class="card" style="flex:2">
+      <h4 style="margin:0 0 8px">Timeline Lane (drop here)</h4>
+      <div id="timelineDrop" style="min-height:90px; border:1px dashed var(--line); border-radius:10px; padding:8px"></div>
+      <div id="timelineRows" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div id="timelineResult" class="mut" style="margin-top:10px"></div>
+</div>
+
+
+<div class="card" style="margin-top:12px">
+  <h3 style="margin:0 0 10px">Assets (latest first)</h3>
+  {% if assets %}
+    <table>
+      <tr><th>When</th><th>Kind</th><th>Preview</th></tr>
+      {% for a in assets[:40] %}
+        <tr>
+          <td class="mut mono">{{ a.created_at }}</td>
+          <td class="mono">{{ a.kind }}</td>
+          <td>
+            <details>
+              {% if a.kind in ['mix','timeline_mix','audio_trim'] and '"filename": "' in a.payload_json %}
+              {% set fn = a.payload_json.split('"filename": "')[1].split('"')[0] %}
+              <a class="btn" href="/exports/{{ fn }}">Download</a>
+            {% endif %}
+              <summary class="mut">View JSON</summary>
+              <pre style="white-space:pre-wrap">{{ a.payload_json }}</pre>
+            </details>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="mut">No assets yet.</div>
+  {% endif %}
+</div>
+
+<script>
+  async function doPost(url, body, actionName){
+    try{
+      const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})});
+      const j = await r.json();
+      const ok = r.ok && (j.ok !== false);
+      let msg = ok ? 'Done.' : ('Error: ' + (j.error || r.status));
+      const links = [];
+      if(actionName==='export' && j.filename){
+        links.push({label:'Download export', href:'/exports/' + j.filename});
+        msg = 'Export created: ' + j.filename;
+      }
+      window.ccSetConsole(actionName, ok, msg, links);
+      if(ok) location.reload();
+    }catch(e){
+      window.ccSetConsole(actionName, false, 'Exception: ' + e, []);
+    }
+  }
+
+  // Upload: show analysis in console
+  const form = document.getElementById('uploadForm');
+  if(form){
+    form.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const fd = new FormData(form);
+      const r = await fetch('/api/upload/audio', {method:'POST', body: fd});
+      const j = await r.json();
+      const ok = r.ok && (j.ok !== false);
+      window.ccSetConsole('upload_audio', ok, ok ? 'Uploaded + analyzed.' : ('Error: ' + (j.error||r.status)), []);
+      if(ok) location.reload();
+    });
+  }
+
+
+
+  // ----------------- P11 Audio Utility -----------------
+  let utilMarkers = [];
+  let utilDuration = 0;
+  let utilPeaks = null;
+
+  function utilClearMarkers(){
+    utilMarkers = [];
+    utilRenderMarkers();
+  }
+
+  function utilSetTrimFromMarkers(){
+    if(utilMarkers.length < 2){
+      window.ccSetConsole('audio_util', false, 'Need at least 2 markers to set trim.', []);
+      return;
+    }
+    const s = utilMarkers[0];
+    const e = utilMarkers[1];
+    document.getElementById('trimStart').value = s.toFixed(2);
+    document.getElementById('trimEnd').value = e.toFixed(2);
+    window.ccSetConsole('audio_util', true, `Trim set: ${s.toFixed(2)} → ${e.toFixed(2)}`, []);
+  }
+
+  function utilRenderMarkers(){
+    const pre = document.getElementById('markersJson');
+    if(pre) pre.textContent = JSON.stringify(utilMarkers, null, 2);
+    utilDrawWaveform();
+  }
+
+  function utilDrawWaveform(){
+    const canvas = document.getElementById('waveCanvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    // resize for crispness
+    const w = canvas.clientWidth || 900;
+    canvas.width = Math.floor(w * (window.devicePixelRatio || 1));
+    canvas.height = Math.floor(120 * (window.devicePixelRatio || 1));
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#071023';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    if(!utilPeaks){
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillText('Select an audio file to render waveform.', 12, 24);
+      return;
+    }
+
+    const mid = canvas.height/2;
+    const step = utilPeaks.length / canvas.width;
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    for(let x=0; x<canvas.width; x++){
+      const idx = Math.floor(x * step);
+      const v = utilPeaks[idx] || 0;
+      const y = v * (canvas.height*0.45);
+      ctx.moveTo(x, mid - y);
+      ctx.lineTo(x, mid + y);
+    }
+    ctx.stroke();
+
+    // markers
+    if(utilDuration > 0 && utilMarkers.length){
+      ctx.strokeStyle = 'rgba(34,197,94,0.9)';
+      ctx.fillStyle = 'rgba(34,197,94,0.9)';
+      for(const m of utilMarkers){
+        const x = Math.max(0, Math.min(canvas.width-1, Math.floor((m/utilDuration) * canvas.width)));
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+        ctx.fillText(m.toFixed(2)+'s', x+4, 14);
+      }
+    }
+  }
+
+  async function utilDecodeAndPeak(file){
+    const ab = await file.arrayBuffer();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ac = new AudioCtx();
+    const buf = await ac.decodeAudioData(ab.slice(0));
+    utilDuration = buf.duration || 0;
+
+    // compute peaks for first channel
+    const ch0 = buf.getChannelData(0);
+    const buckets = 2000;
+    const step = Math.max(1, Math.floor(ch0.length / buckets));
+    const peaks = new Float32Array(buckets);
+    for(let i=0;i<buckets;i++){
+      const s = i*step;
+      const e = Math.min(ch0.length, s+step);
+      let mx = 0;
+      for(let j=s;j<e;j++){
+        const v = Math.abs(ch0[j]);
+        if(v>mx) mx=v;
+      }
+      peaks[i]=mx;
+    }
+    utilPeaks = peaks;
+    // default trim end
+    const te = document.getElementById('trimEnd');
+    if(te && (!te.value || parseFloat(te.value)===0)) te.value = utilDuration.toFixed(2);
+    utilDrawWaveform();
+  }
+
+  async function serverTrim(){
+    const fileEl = document.getElementById('utilFile');
+    if(!fileEl || !fileEl.files || !fileEl.files[0]){
+      window.ccSetConsole('audio_trim', false, 'Choose an audio file first.', []);
+      return;
+    }
+    const start = parseFloat(document.getElementById('trimStart').value||'0');
+    const end = parseFloat(document.getElementById('trimEnd').value||'0');
+    if(!(end>start)){
+      window.ccSetConsole('audio_trim', false, 'End must be greater than start.', []);
+      return;
+    }
+    const fd = new FormData();
+    fd.append('file', fileEl.files[0]);
+    fd.append('start_sec', String(start));
+    fd.append('end_sec', String(end));
+    fd.append('project_code', '{{ project.project_code }}');
+
+    const r = await fetch('/api/audio/trim', {method:'POST', body: fd});
+    const j = await r.json();
+    const ok = r.ok && (j.ok !== false);
+    const links = ok ? [{label:'Download trimmed WAV', href: j.download_url}] : [];
+    window.ccSetConsole('audio_trim', ok, ok ? 'Trim created.' : ('Error: ' + (j.error||r.status)), links);
+    if(ok){
+      const div = document.getElementById('utilResult');
+      if(div){
+        div.innerHTML = `Trim output: <a href="${j.download_url}">${j.output_filename}</a><br/><audio controls style="width:100%; margin-top:6px" src="${j.media_url}"></audio>`;
+      }
+    }
+  }
+
+  async function serverSegmentPack(){
+    const fileEl = document.getElementById('utilFile');
+    if(!fileEl || !fileEl.files || !fileEl.files[0]){
+      window.ccSetConsole('audio_segment_pack', false, 'Choose an audio file first.', []);
+      return;
+    }
+    if(!utilMarkers.length){
+      window.ccSetConsole('audio_segment_pack', false, 'Add at least 1 marker (click waveform).', []);
+      return;
+    }
+    const fd = new FormData();
+    fd.append('file', fileEl.files[0]);
+    fd.append('markers_json', JSON.stringify(utilMarkers));
+    fd.append('project_code', '{{ project.project_code }}');
+
+    const r = await fetch('/api/audio/segment_pack', {method:'POST', body: fd});
+    const j = await r.json();
+    const ok = r.ok && (j.ok !== false);
+    const links = ok ? [{label:'Download segment pack ZIP', href: j.download_url}] : [];
+    window.ccSetConsole('audio_segment_pack', ok, ok ? ('Segment pack created ('+j.segment_count+' segments).') : ('Error: ' + (j.error||r.status)), links);
+    if(ok){
+      const div = document.getElementById('utilResult');
+      if(div){
+        div.innerHTML = `Segment pack: <a href="${j.download_url}">${j.zip_filename}</a> (${j.segment_count} segments)`;
+      }
+    }
+  }
+
+  async function loadQCTargets(){
+    const sel = document.getElementById('qcTarget');
+    if(!sel) return;
+    sel.innerHTML = '';
+    try{
+      const r = await fetch('/api/audio/qc/targets');
+      const j = await r.json();
+      const targets = (j.targets||{});
+      const keys = Object.keys(targets);
+      if(!keys.length){
+        const o = document.createElement('option');
+        o.value = 'streaming_general'; o.textContent = 'streaming_general';
+        sel.appendChild(o);
+        return;
+      }
+      for(const k of keys){
+        const o = document.createElement('option');
+        o.value = k;
+        const t = targets[k]||{};
+        const l = (t.target_lufs_i!==undefined) ? ` ${t.target_lufs_i} LUFS` : '';
+        o.textContent = k + l;
+        sel.appendChild(o);
+      }
+      sel.value = 'podcast_stereo' in targets ? 'podcast_stereo' : (keys[0]||'streaming_general');
+    }catch(e){
+      const o = document.createElement('option');
+      o.value = 'streaming_general'; o.textContent = 'streaming_general';
+      sel.appendChild(o);
+    }
+  }
+
+  async function serverQC(){
+    const fileEl = document.getElementById('utilFile');
+    if(!fileEl || !fileEl.files || !fileEl.files[0]){
+      window.ccSetConsole('audio_qc', false, 'Choose an audio file first.', []);
+      return;
+    }
+    const sel = document.getElementById('qcTarget');
+    const target = sel ? (sel.value || 'streaming_general') : 'streaming_general';
+    const fd = new FormData();
+    fd.append('file', fileEl.files[0]);
+    fd.append('target_profile', target);
+    fd.append('project_code', '{{ project.project_code }}');
+    const r = await fetch('/api/audio/qc', {method:'POST', body: fd});
+    const j = await r.json();
+    const ok = r.ok && (j.ok !== false);
+    const m = j.measured || {};
+    const msg = ok
+      ? `QC OK • I=${m.integrated_lufs} LUFS • TP=${m.true_peak_dbfs} dBFS (${m.method})`
+      : `QC FAIL • ${j.error || ''}`;
+    window.ccSetConsole('audio_qc', ok, msg, []);
+    const div = document.getElementById('utilResult');
+    if(div){
+      div.innerHTML = `<b>Loudness QC</b><br/>${msg}<br/><pre style="white-space:pre-wrap">${JSON.stringify(j, null, 2)}</pre>`;
+    }
+    if(ok) location.reload();
+  }
+
+  // wire up waveform
+  const utilFile = document.getElementById('utilFile');
+  const utilPlayer = document.getElementById('utilPlayer');
+  const waveCanvas = document.getElementById('waveCanvas');
+  if(utilFile){
+    utilFile.addEventListener('change', async (ev)=>{
+      utilClearMarkers();
+      const f = utilFile.files && utilFile.files[0];
+      if(!f) return;
+      const url = URL.createObjectURL(f);
+      if(utilPlayer) utilPlayer.src = url;
+      try{
+        await utilDecodeAndPeak(f);
+        window.ccSetConsole('audio_util', true, 'Waveform ready. Click to place markers.', []);
+      }catch(e){
+        utilPeaks = null;
+        utilDuration = 0;
+        utilDrawWaveform();
+        window.ccSetConsole('audio_util', false, 'Could not decode in browser. Try WAV.', []);
+      }
+    });
+  }
+
+  loadQCTargets();
+  if(waveCanvas){
+    waveCanvas.addEventListener('click', (ev)=>{
+      if(!utilDuration) return;
+      const rect = waveCanvas.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const t = Math.max(0, Math.min(utilDuration, (x/rect.width) * utilDuration));
+      utilMarkers.push(parseFloat(t.toFixed(2)));
+      utilMarkers = Array.from(new Set(utilMarkers)).sort((a,b)=>a-b);
+      utilRenderMarkers();
+    });
+    window.addEventListener('resize', ()=> utilDrawWaveform());
+  }
+
+
+  function showProjectTab(tab){
+    const isMix = tab==='mix';
+    const isTimeline = tab==='timeline';
+    document.getElementById('tabMain').style.display = (isMix || isTimeline) ? 'none' : 'block';
+    document.getElementById('tabMix').style.display = isMix ? 'block' : 'none';
+    document.getElementById('tabTimeline').style.display = isTimeline ? 'block' : 'none';
+    document.getElementById('tabBtnMain').classList.toggle('primary', !(isMix || isTimeline));
+    document.getElementById('tabBtnMix').classList.toggle('primary', isMix);
+    document.getElementById('tabBtnTimeline').classList.toggle('primary', isTimeline);
+  }
+
+  const mixState = {
+    buses: {{ mix_buses|tojson }},
+    wavAssets: {{ wav_assets|tojson }}
+  };
+
+  function mixRefreshBusSelect(){
+    const sel = document.getElementById('mixBusSelect');
+    sel.innerHTML = '';
+    for(const b of mixState.buses){
+      const o = document.createElement('option');
+      o.value = b.name;
+      o.textContent = `${b.name} (${(b.tracks||[]).length} tracks)`;
+      sel.appendChild(o);
+    }
+    if(mixState.buses.length){
+      sel.value = mixState.buses[0].name;
+      mixLoadSelectedBus();
+    }
+  }
+
+  function mixTrackRow(t={asset_id:'', gain_db:0, pan:0}){
+    const div=document.createElement('div');
+    div.className='row';
+    const opts = mixState.wavAssets.map(a=>`<option value="${a.id}" ${String(a.id)===String(t.asset_id)?'selected':''}>#${a.id} ${a.kind} ${a.filename}</option>`).join('');
+    div.innerHTML = `<select class="mixAsset" style="min-width:280px"><option value="">Select WAV asset</option>${opts}</select>
+      <label class="mut">Gain dB <input class="mixGain" type="range" min="-24" max="12" step="0.5" value="${t.gain_db||0}" oninput="this.nextElementSibling.textContent=this.value"></label><span class="mono">${t.gain_db||0}</span>
+      <label class="mut">Pan <input class="mixPan" type="range" min="-1" max="1" step="0.01" value="${t.pan||0}" oninput="this.nextElementSibling.textContent=this.value"></label><span class="mono">${t.pan||0}</span>
+      <button class="btn" type="button" onclick="this.parentElement.remove()">Remove</button>`;
+    return div;
+  }
+
+  function mixAddTrackRow(t){ document.getElementById('mixRows').appendChild(mixTrackRow(t||{})); }
+
+  function mixLoadSelectedBus(){
+    const sel=document.getElementById('mixBusSelect');
+    const name = sel.value || document.getElementById('mixBusName').value;
+    document.getElementById('mixBusName').value=name;
+    const bus = mixState.buses.find(b=>b.name===name) || {tracks:[]};
+    const rows = document.getElementById('mixRows'); rows.innerHTML='';
+    (bus.tracks||[]).forEach(t=>mixAddTrackRow(t));
+  }
+
+  function mixCollect(){
+    const tracks=[];
+    for(const row of document.querySelectorAll('#mixRows .row')){
+      const asset_id = parseInt(row.querySelector('.mixAsset').value||'0',10);
+      if(!asset_id) continue;
+      tracks.push({asset_id, gain_db:parseFloat(row.querySelector('.mixGain').value||'0'), pan:parseFloat(row.querySelector('.mixPan').value||'0')});
+    }
+    return tracks;
+  }
+
+  async function mixCreateBus(){
+    const name=(document.getElementById('mixBusName').value||'').trim();
+    const tracks=mixCollect();
+    const r=await fetch('/api/mix/bus',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:'{{ project.project_code }}',name,tracks})});
+    const j=await r.json();
+    document.getElementById('mixResult').textContent = r.ok ? 'Bus saved.' : ('Error: '+(j.error||r.status));
+    if(r.ok){ const g=await fetch('/api/mix/buses/{{ project.project_code }}'); const gj=await g.json(); mixState.buses=gj.buses||[]; mixRefreshBusSelect(); }
+  }
+
+  async function mixDeleteBus(){
+    const name=(document.getElementById('mixBusName').value||'').trim();
+    const bus = mixState.buses.find(b=>b.name===name);
+    if(!bus){ document.getElementById('mixResult').textContent='Bus not found.'; return; }
+    const r=await fetch('/api/mix/bus/'+bus.id,{method:'DELETE'}); const j=await r.json();
+    document.getElementById('mixResult').textContent = r.ok ? 'Bus deleted.' : ('Error: '+(j.error||r.status));
+    if(r.ok){ const g=await fetch('/api/mix/buses/{{ project.project_code }}'); const gj=await g.json(); mixState.buses=gj.buses||[]; mixRefreshBusSelect(); }
+  }
+
+  async function mixRenderBus(){
+    const name=(document.getElementById('mixBusName').value||'').trim();
+    const r=await fetch('/api/mix/render',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:'{{ project.project_code }}',name})});
+    const j=await r.json();
+    document.getElementById('mixResult').textContent = r.ok ? ('Mix rendered: '+(j.mix?.filename||'')) : ('Error: '+(j.error||r.status)+' '+(j.hint||''));
+    if(r.ok) location.reload();
+  }
+
+
+
+  const timelineState = {
+    timelines: {{ timelines|tojson }},
+    busNames: ({{ mix_buses|tojson }} || []).map(b=>b.name),
+  };
+
+  function timelineAssetOptions(selected){
+    return mixState.wavAssets.map(a=>`<option value="${a.id}" ${String(a.id)===String(selected||'')?'selected':''}>#${a.id} ${a.filename}</option>`).join('');
+  }
+
+  function timelineBusOptions(selected){
+    const opts = ['<option value="">(none)</option>'];
+    for(const b of timelineState.busNames){
+      opts.push(`<option value="${b}" ${b===selected?'selected':''}>${b}</option>`);
+    }
+    return opts.join('');
+  }
+
+  function timelineRow(t={asset_id:'',start_ms:0,duration_ms:0,bus_name:''}){
+    const d=document.createElement('div');
+    d.className='row';
+    d.innerHTML=`<select class="tlAsset" style="min-width:220px">${timelineAssetOptions(t.asset_id)}</select>
+      <label class="mut">Start ms <input class="tlStart" type="number" min="0" step="10" value="${t.start_ms||0}"/></label>
+      <label class="mut">Duration ms (0=full) <input class="tlDur" type="number" min="0" step="10" value="${t.duration_ms||0}"/></label>
+      <label class="mut">Bus <select class="tlBus" style="max-width:140px">${timelineBusOptions(t.bus_name||'')}</select></label>
+      <button class="btn" type="button" onclick="this.parentElement.remove()">Remove</button>`;
+    return d;
+  }
+
+  function timelineRenderAssetBin(){
+    const bin=document.getElementById('timelineAssetBin');
+    bin.innerHTML='';
+    for(const a of mixState.wavAssets){
+      const el=document.createElement('div');
+      el.className='btn';
+      el.draggable=true;
+      el.textContent=`#${a.id} ${a.filename}`;
+      el.dataset.assetId=a.id;
+      el.addEventListener('dragstart', (ev)=>ev.dataTransfer.setData('text/plain', String(a.id)));
+      bin.appendChild(el);
+    }
+  }
+
+  function timelineCollect(){
+    const tracks=[];
+    for(const row of document.querySelectorAll('#timelineRows .row')){
+      const asset_id=parseInt(row.querySelector('.tlAsset').value||'0',10);
+      if(!asset_id) continue;
+      tracks.push({
+        asset_id,
+        start_ms: Math.max(0, parseInt(row.querySelector('.tlStart').value||'0',10)||0),
+        duration_ms: Math.max(0, parseInt(row.querySelector('.tlDur').value||'0',10)||0),
+        bus_name: (row.querySelector('.tlBus').value||'').trim() || null
+      });
+    }
+    return tracks;
+  }
+
+  function timelineRefreshSelect(){
+    const sel=document.getElementById('timelineSelect');
+    sel.innerHTML='';
+    for(const t of timelineState.timelines){
+      const o=document.createElement('option');
+      o.value=t.name; o.textContent=`${t.name} (${(t.tracks||[]).length} tracks)`;
+      sel.appendChild(o);
+    }
+    if(timelineState.timelines.length){ sel.value=timelineState.timelines[0].name; timelineLoadSelected(); }
+  }
+
+  function timelineLoadSelected(){
+    const name=document.getElementById('timelineSelect').value || document.getElementById('timelineName').value;
+    document.getElementById('timelineName').value=name;
+    const t=timelineState.timelines.find(x=>x.name===name) || {tracks:[]};
+    const rows=document.getElementById('timelineRows'); rows.innerHTML='';
+    (t.tracks||[]).forEach(tr=>rows.appendChild(timelineRow(tr)));
+  }
+
+  async function timelineReload(){
+    const r=await fetch('/api/timeline/{{ project.project_code }}');
+    const j=await r.json();
+    timelineState.timelines=j.timelines||[];
+    timelineRefreshSelect();
+  }
+
+  async function timelineSave(){
+    const name=(document.getElementById('timelineName').value||'').trim();
+    const tracks=timelineCollect();
+    const r=await fetch('/api/timeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:'{{ project.project_code }}',name,tracks})});
+    const j=await r.json();
+    document.getElementById('timelineResult').textContent = r.ok ? 'Timeline saved.' : ('Error: '+(j.error||r.status));
+    if(r.ok) await timelineReload();
+  }
+
+  async function timelineDelete(){
+    const name=(document.getElementById('timelineName').value||'').trim();
+    const t=timelineState.timelines.find(x=>x.name===name);
+    if(!t){ document.getElementById('timelineResult').textContent='Timeline not found.'; return; }
+    const r=await fetch('/api/timeline/'+t.id,{method:'DELETE'});
+    const j=await r.json();
+    document.getElementById('timelineResult').textContent = r.ok ? 'Timeline deleted.' : ('Error: '+(j.error||r.status));
+    if(r.ok) await timelineReload();
+  }
+
+  async function timelineRender(){
+    const name=(document.getElementById('timelineName').value||'').trim();
+    const r=await fetch('/api/timeline/render',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:'{{ project.project_code }}',name})});
+    const j=await r.json();
+    document.getElementById('timelineResult').textContent = r.ok ? ('Timeline mix rendered: '+(j.mix?.filename||'')) : ('Error: '+(j.error||r.status)+' '+(j.hint||''));
+    if(r.ok) location.reload();
+  }
+
+  const timelineDrop=document.getElementById('timelineDrop');
+  if(timelineDrop){
+    timelineDrop.addEventListener('dragover', (ev)=>{ ev.preventDefault(); });
+    timelineDrop.addEventListener('drop', (ev)=>{
+      ev.preventDefault();
+      const aid=parseInt(ev.dataTransfer.getData('text/plain')||'0',10);
+      if(!aid) return;
+      document.getElementById('timelineRows').appendChild(timelineRow({asset_id:aid,start_ms:0,duration_ms:0,bus_name:''}));
+    });
+  }
+
+  showProjectTab('main');
+  mixRefreshBusSelect();
+  if(!mixState.buses.length){ mixAddTrackRow(); }
+  timelineRenderAssetBin();
+  timelineRefreshSelect();
+
+</script>
+{% endblock %}
