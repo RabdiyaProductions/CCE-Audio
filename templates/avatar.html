@@ -1,0 +1,51 @@
+    {% extends "base.html" %}
+    {% block content %}
+    <div class="grid">
+      <div class="card">
+        <div style="font-weight:900">AI Employee Avatar (MVP5)</div>
+        <div class="muted">Interactive assistant for this MVP. Safe mode: generates tasks/checklists/reports only.</div>
+        <form method="post" action="/avatar/persona">
+          <div class="row">
+            <div style="flex:1">
+              <div class="muted">Name</div>
+              <input name="name" value="{{ persona.name }}">
+            </div>
+            <div style="flex:1">
+              <div class="muted">Role</div>
+              <input name="role" value="{{ persona.role }}">
+            </div>
+          </div>
+          <div class="muted">Style</div>
+          <input name="style" value="{{ persona.style }}">
+          <div class="muted">Capabilities (one per line)</div>
+          <textarea name="capabilities">{% for c in persona.capabilities %}{{ c }}
+{% endfor %}</textarea>
+          <button type="submit">Save persona</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:900">Send message</div>
+        <form method="post" action="/avatar/send">
+          <textarea name="message" placeholder="Ask for refinement steps, QA checklist, output template, or task breakdown."></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900">Conversation</div>
+      <div class="muted">Newest first. Export from Export/Import tab.</div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        {% for m in chat %}
+          <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:10px; background: rgba(255,255,255,0.03)">
+            <div class="muted">{{ m.ts }} • {{ m.from }}</div>
+            <pre>{{ m.text }}</pre>
+          </div>
+        {% endfor %}
+        {% if chat|length == 0 %}
+          <div class="muted">No messages yet.</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endblock %}

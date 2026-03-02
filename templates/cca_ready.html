@@ -1,0 +1,57 @@
+{% extends "cca_base.html" %}
+{% set title="Ready" %}
+{% block content %}
+<div class="grid">
+  <div class="card" style="grid-column: span 7;">
+    <h2 style="margin:0 0 10px">✅ Ready Stamp</h2>
+    <div class="mut">Operational snapshot for this engine (boot, version, last smoke run).</div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="justify-content:space-between">
+        <div><b>Name</b></div><div class="mono">{{ meta.name }}</div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div><b>Key</b></div><div class="mono">{{ meta.key }}</div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div><b>Version</b></div><div class="mono">{{ meta.version }}</div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div><b>Port</b></div><div class="mono">{{ meta.port }}</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin:0 0 8px">Last smoke run</h3>
+      {% if last %}
+        <pre class="mono" style="white-space:pre-wrap">{{ last | tojson(indent=2) }}</pre>
+      {% else %}
+        <div class="mut">No smoke run recorded yet. Run <span class="mono">_BAT\6_run_tests.bat</span>.</div>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin:0 0 8px">Health</h3>
+      <pre class="mono" style="white-space:pre-wrap">{{ health | tojson(indent=2) }}</pre>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column: span 5;">
+    <h3 style="margin:0 0 10px">Quick links</h3>
+    <div class="row" style="flex-direction:column; gap:10px; align-items:stretch">
+      <a class="btn" href="{{ url_for('diagnostics') }}">🧪 Diagnostics</a>
+      <a class="btn" href="{{ url_for('projects_page') }}">📁 Projects</a>
+      <a class="btn" href="{{ url_for('exports_page') }}">📦 Exports</a>
+      <a class="btn" href="{{ url_for('export_import_page') }}">🔁 Export/Import</a>
+      <a class="btn" href="{{ url_for('home') }}">🏠 Home</a>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin:0 0 8px">Run commands</h3>
+      <pre class="mono">_BAT\1_setup.bat
+_BAT\2_run.bat
+_BAT\6_run_tests.bat</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "cca_base.html" %}
+{% set title="Imports" %}
+{% block content %}
+<h2 style="margin:0 0 10px">Imports</h2>
+<div class="card">
+  <form method="post" action="/api/import" enctype="multipart/form-data">
+    <div class="row">
+      <input type="file" name="file"/>
+      <input name="note" placeholder="Optional note"/>
+      <button class="btn primary" type="submit">Upload</button>
+    </div>
+  </form>
+  <div class="mut" style="margin-top:10px">Imports are stored in <span class="mono">/imports</span> and recorded in the registry.</div>
+</div>
+
+<div class="card" style="margin-top:12px">
+  <h3 style="margin:0 0 8px">Import registry (latest)</h3>
+  {% if imports %}
+    <table>
+      <tr><th>When</th><th>Filename</th><th>SHA256</th><th>Bytes</th><th>Note</th><th>Download</th></tr>
+      {% for i in imports %}
+        <tr>
+          <td class="mut mono">{{ i.created_at }}</td>
+          <td class="mono">{{ i.filename }}</td>
+          <td class="mono mut">{{ i.sha256[:16] }}…</td>
+          <td class="mut">{{ i.bytes }}</td>
+          <td class="mut">{{ i.note }}</td>
+          <td><a href="{{ url_for('download_import', filename=i.filename) }}">download</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="mut">No imports yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

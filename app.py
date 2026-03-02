@@ -128,18 +128,6 @@ def create_app():
         except Exception:
             return None
 
-    def _asset_filename(asset_row: dict) -> str:
-        try:
-            payload = json.loads(asset_row.get("payload_json") or "{}")
-        except Exception:
-            payload = {}
-        return (payload.get("filename") or payload.get("output") or "").strip()
-
-    def _asset_is_wav(asset_row: dict) -> bool:
-        fn = _asset_filename(asset_row).lower()
-        return fn.endswith(".wav")
-
-
     def _fire_export_webhook(event: dict) -> None:
         url = (_get_setting("webhook_export_url") or "").strip()
         if not url:
@@ -248,17 +236,7 @@ def create_app():
             abort(404)
         assets = storage.list_assets(conn, code, limit=200)
         exports = storage.list_exports(conn, code, limit=100)
-        mix_buses = storage.list_mix_buses(conn, code)
-        wav_assets = []
-        for a in assets:
-            if _asset_is_wav(a):
-                wav_assets.append({
-                    "id": a.get("id"),
-                    "kind": a.get("kind"),
-                    "created_at": a.get("created_at"),
-                    "filename": _asset_filename(a),
-                })
-        return render_template("cca_project.html", project=p, assets=assets, exports=exports, mix_buses=mix_buses, wav_assets=wav_assets)
+        return render_template("cca_project.html", project=p, assets=assets, exports=exports)
 
     @app.get("/imports")
     def imports_page():
@@ -877,78 +855,6 @@ def create_app():
             storage.add_asset(conn, code, "loudness_qc", json.dumps(rep, ensure_ascii=False, indent=2), now_utc())
             _audit("loudness_qc", {"target": target_profile, "ok": rep.get("ok")}, project_code=code)
         return jsonify(rep)
-
-    # ----------------- API: mix board (P21 step 1) -----------------
-    @app.get("/api/mix/buses/<project_id>")
-    def api_mix_buses(project_id):
-        code = (project_id or "").strip().upper()
-        if not code:
-            return jsonify({"error": "project_id_required"}), 400
-        p = storage.get_project(conn, code)
-        if not p:
-            return jsonify({"error": "not_found"}), 404
-        return jsonify({"ok": True, "project_code": code, "buses": storage.list_mix_buses(conn, code)})
-
-    @app.post("/api/mix/bus")
-    def api_mix_bus_upsert():
-        payload = request.get_json(force=True, silent=True) or {}
-        code = (payload.get("project_id") or payload.get("project_code") or "").strip().upper()
-        name = (payload.get("name") or "main").strip()
-        tracks = payload.get("tracks") or []
-        if not code:
-            return jsonify({"error": "project_id_required"}), 400
-        if not name:
-            return jsonify({"error": "name_required"}), 400
-        if not isinstance(tracks, list):
-            return jsonify({"error": "tracks_must_be_array"}), 400
-        cleaned = []
-        for t in tracks:
-            if not isinstance(t, dict) or t.get("asset_id") is None:
-                continue
-            try:
-                aid = int(t.get("asset_id"))
-                gain = float(t.get("gain_db") or 0.0)
-                pan = float(t.get("pan") or 0.0)
-            except Exception:
-                continue
-            cleaned.append({"asset_id": aid, "gain_db": gain, "pan": max(-1.0, min(1.0, pan))})
-        bus = storage.upsert_mix_bus(conn, code, name, cleaned, now_utc())
-        _audit("mix_bus_upsert", {"bus_id": bus.get("id"), "name": name, "tracks": len(cleaned)}, project_code=code)
-        return jsonify({"ok": True, "bus": bus})
-
-    @app.delete("/api/mix/bus/<bus_id>")
-    def api_mix_bus_delete(bus_id):
-        try:
-            bid = int(bus_id)
-        except Exception:
-            return jsonify({"error": "invalid_bus_id"}), 400
-        ok = storage.delete_mix_bus(conn, bid)
-        if not ok:
-            return jsonify({"error": "not_found"}), 404
-        return jsonify({"ok": True})
-
-    @app.post("/api/mix/render")
-    def api_mix_render():
-        payload = request.get_json(force=True, silent=True) or {}
-        code = (payload.get("project_id") or payload.get("project_code") or "").strip().upper()
-        name = (payload.get("name") or "").strip()
-        if not code or not name:
-            return jsonify({"error": "project_id_and_name_required"}), 400
-        buses = storage.list_mix_buses(conn, code)
-        bus = next((b for b in buses if (b.get("name") or "") == name), None)
-        if not bus:
-            return jsonify({"error": "bus_not_found"}), 404
-        try:
-            mix = storage.mix_audio(conn, dirs, code, name, bus.get("tracks") or [], now_utc())
-        except Exception as e:
-            msg = str(e)
-            hint = None
-            if "non_wav_track" in msg:
-                hint = "Only WAV tracks are mixable right now. Convert first via Trim utility."
-            return jsonify({"error": msg, "hint": hint}), 400
-        _audit("mix_render", {"name": name, "filename": mix.get("filename")}, project_code=code)
-        return jsonify({"ok": True, "mix": mix, "download_url": f"/exports/{mix.get('filename')}"})
-
 
 # ----------------- Export / import -----------------
     def build_export_zip(issue_ref: str, project_row: dict, pilot_pack: dict, platform_files: dict, export_meta: dict) -> bytes:

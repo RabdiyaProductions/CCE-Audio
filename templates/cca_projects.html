@@ -1,0 +1,26 @@
+{% extends "cca_base.html" %}
+{% set title="Projects" %}
+{% block content %}
+<div class="row" style="justify-content:space-between; align-items:center">
+  <h2 style="margin:0">Projects</h2>
+  <a class="btn primary" href="{{ url_for('new_project_page') }}">➕ New Project</a>
+</div>
+<div class="card" style="margin-top:12px">
+  <table>
+    <tr><th>Code</th><th>Title</th><th>Studio</th><th>Audio Type</th><th>Genre</th><th>BPM</th><th>Key</th><th>Status</th><th>Updated</th></tr>
+    {% for p in projects %}
+      <tr>
+        <td class="mono"><a href="{{ url_for('project_view', code=p.project_code) }}">{{ p.project_code }}</a></td>
+        <td>{{ p.title }}</td>
+        <td class="mut">{{ p.studio }}</td>
+        <td class="mut">{{ p.audio_type }}</td>
+        <td class="mut">{{ p.genre }}</td>
+        <td class="mut">{{ p.bpm }}</td>
+        <td class="mut">{{ p.musical_key }}</td>
+        <td class="mut">{{ p.status }}</td>
+        <td class="mut">{{ p.updated_at }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
