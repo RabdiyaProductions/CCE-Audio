@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Exports</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0b1220;color:#e6edf3;margin:0}
+  a{color:#7dd3fc;text-decoration:none}
+  .wrap{max-width:900px;margin:28px auto;padding:0 16px}
+  .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
+  .tile{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25)}
+  .muted{color:#9aa4b2;font-size:13px}
+</style>
+</head><body>
+<div class="wrap">
+  <div class="card">
+    <h2 style="margin:0 0 6px 0">Exports</h2>
+    <div class="muted">Baseline export registry for this app. Hook each exporter to the app’s real workflow as you bespoke each tool.</div>
+    <div class="grid">
+      {% for f in formats %}
+        <div class="tile"><strong>{{ f }}</strong><div class="muted">/exports?fmt={{ f }}</div></div>
+      {% endfor %}
+    </div>
+    <div style="height:14px"></div>
+    <div class="muted">Tip: For media exports (MP4/MP3), keep generation async in production. For now this is a UI stub.</div>
+  </div>
+</div>
+</body></html>

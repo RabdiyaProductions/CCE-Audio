@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div style="font-weight:900">System Prompt Baseline</div>
+    <div class="muted">This is your “R&D + addendums” baseline prompt for this MVP.</div>
+    <form method="post" action="/thinking/system">
+      <textarea name="system_prompt">{{ system_prompt }}</textarea>
+      <button type="submit">Save system prompt</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Add AI Thinking Note</div>
+    <form method="post" action="/thinking/add">
+      <input name="title" placeholder="Title (e.g., UX tweak, risk, next upgrade)">
+      <textarea name="content" placeholder="Write your thinking. This becomes the living AI direction log."></textarea>
+      <button type="submit">Add note</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-weight:900">Thinking Log</div>
+  <div class="muted">Newest first. Export with Export/Import tab.</div>
+  <div style="display:flex; flex-direction:column; gap:10px">
+    {% for e in logs %}
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:10px; background: rgba(255,255,255,0.03)">
+        <div style="font-weight:900">{{ e.title }}</div>
+        <div class="muted">{{ e.ts }}</div>
+        <pre>{{ e.content }}</pre>
+      </div>
+    {% endfor %}
+    {% if logs|length == 0 %}
+      <div class="muted">No notes yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

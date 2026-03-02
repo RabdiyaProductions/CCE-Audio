@@ -1,0 +1,23 @@
+{% extends "cca_base.html" %}
+{% set title="Exports" %}
+{% block content %}
+<h2 style="margin:0 0 10px">Exports</h2>
+<div class="card">
+  {% if exports %}
+    <table>
+      <tr><th>Project</th><th>Issue Ref</th><th>File</th><th>Bytes</th><th>When</th></tr>
+      {% for e in exports %}
+        <tr>
+          <td class="mono">{{ e.project_code }}</td>
+          <td class="mono">{{ e.issue_ref }}</td>
+          <td><a href="{{ url_for('download_export', filename=e.filename) }}">{{ e.filename }}</a></td>
+          <td class="mut">{{ e.bytes }}</td>
+          <td class="mut mono">{{ e.created_at }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="mut">No exports yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

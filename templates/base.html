@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ meta.name }} — {{ meta.version }}</title>
+  <style>
+    :root{
+      --bg: {{ meta.brand.background }};
+      --p: {{ meta.brand.primary }};
+      --a: {{ meta.brand.accent }};
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+    }
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background: var(--bg); color: var(--text); }
+    .wrap{ max-width: 1080px; margin: 0 auto; padding: 16px; display:flex; flex-direction:column; gap: 12px; }
+    .top{ display:flex; gap: 12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .brand{ display:flex; flex-direction:column; gap: 2px; }
+    .brand h1{ font-size: 18px; margin:0; font-weight: 900; }
+    .brand .sub{ color: var(--muted); font-size: 13px; }
+    .pill{ display:inline-flex; border:1px solid var(--border); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .tabs{ display:flex; gap:10px; flex-wrap:wrap; }
+    .tab{ text-decoration:none; color: var(--text); opacity: 0.85; border:1px solid var(--border); padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
+    .tab.active{ opacity:1; border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.08); }
+    .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .card{ border:1px solid var(--border); border-radius: 16px; padding: 12px; background: var(--card); display:flex; flex-direction:column; gap:10px; }
+    input, textarea, select{ width:100%; padding:10px; border-radius:12px; border:1px solid var(--border); background: rgba(0,0,0,0.12); color: var(--text); }
+    textarea{ min-height: 120px; }
+    button{ padding:10px 12px; border-radius:12px; border:1px solid var(--border); background: rgba(255,255,255,0.06); color: var(--text); cursor:pointer; }
+    .muted{ color: var(--muted); font-size: 13px; }
+    pre{ white-space: pre-wrap; margin:0; color: var(--text); }
+    a.link{ color: var(--p); text-decoration:none; }
+  </style>
+</head>
+<body>
+{% include '_empire_nav.html' %}
+
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <h1>{{ meta.brand.logo_text }}</h1>
+        <div class="sub">{{ meta.name }} • {{ meta.version }} • {{ meta.venture }}</div>
+      </div>
+      <div class="row">
+        <span class="pill">Internal only</span>
+        <span class="pill">Link-based</span>
+        <span class="pill">MVP5</span>
+      </div>
+    </div>
+
+    <div class="tabs">
+      {% for t in tabs %}
+        <a class="tab {% if t.key==active %}active{% endif %}" href="{{ t.href }}">{{ t.label }}</a>
+      {% endfor %}
+    </div>
+
+    
+
+    <div class="tabs" style="margin-top:-4px;">
+      <a class="tab" href="/outputs">Outputs</a>
+      <a class="tab" href="/export">Export</a>
+      <a class="tab" href="/passport">Passport</a>
+      <a class="tab" href="/hkeys">HKeys</a>
+      <a class="tab" href="/agentops">AgentOps</a>
+      <a class="tab" href="/thinking">Thinking</a>
+      <a class="tab" href="/health">Health</a>
+    </div>
+{% block content %}{% endblock %}
+  </div>
+</body>
+</html>

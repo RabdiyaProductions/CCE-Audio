@@ -1,0 +1,41 @@
+{% extends "cca_base.html" %}
+{% set title="Dashboard" %}
+{% block content %}
+<div class="grid">
+  <div class="card" style="grid-column: span 8;">
+    <h2 style="margin:0 0 6px">Internal CCE Audio Factory</h2>
+    <div class="mut">Orders come from Studio Hubs ➜ engine generates packs ➜ critique & sign-off ➜ Studio Hub schedules/publishes.</div>
+    <div class="row" style="margin-top:12px">
+      <a class="btn primary" href="{{ url_for('new_project_page') }}">➕ New Project Wizard</a>
+      <a class="btn" href="{{ url_for('projects_page') }}">📁 View Projects</a>
+      <a class="btn" href="{{ url_for('jobs_page') }}">🧵 Jobs Queue</a>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="mut">Quick path:</div>
+      <ol class="mut" style="margin:8px 0 0">
+        <li>Create project</li>
+        <li>Generate pilot pack (arrangement + timeline + mix/master plan)</li>
+        <li>Iterate via timeline edits / critique / producer notes</li>
+        <li>Approve + export pack ZIP for Studio Hub ingestion</li>
+      </ol>
+    </div>
+  </div>
+  <div class="card" style="grid-column: span 4;">
+    <h3 style="margin:0 0 8px">Latest projects</h3>
+    {% if projects %}
+      <table>
+        <tr><th>Code</th><th>Title</th><th>Status</th></tr>
+        {% for p in projects[:8] %}
+          <tr>
+            <td class="mono"><a href="{{ url_for('project_view', code=p.project_code) }}">{{ p.project_code }}</a></td>
+            <td>{{ p.title }}</td>
+            <td class="mut">{{ p.status }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="mut">No projects yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

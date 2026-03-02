@@ -1,0 +1,14 @@
+{
+  "key": "cce.audio.studio.mvp5",
+  "name": "CCE Audio Studio",
+  "description": "Audio factory: music, scoring, sonic branding, podcast/voice, SFX packs; internal only.",
+  "port": 5204,
+  "domain": "audio",
+  "version": "P16-100pct",
+  "build": {
+    "channel": "KRSTD",
+    "boot": "single-path",
+    "offline_first": true,
+    "wave": "P16_multi_format_qc_integrations"
+  }
+}
