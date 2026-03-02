@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div style="font-weight:900">Add Addendum</div>
+    <div class="muted">Use this to capture founder changes post-review. This is what your “AI employees” must respect.</div>
+    <form method="post" action="/addendums/add">
+      <textarea name="change" placeholder="Change request / improvement"></textarea>
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted">Status</div>
+          <select name="status">
+            <option>Proposed</option>
+            <option>Approved</option>
+            <option>Implemented</option>
+            <option>Rejected</option>
+          </select>
+        </div>
+        <div style="flex:2">
+          <div class="muted">Impact</div>
+          <input name="impact" placeholder="UX / Revenue / Risk / Time">
+        </div>
+      </div>
+      <button type="submit">Add addendum</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Rules (fixed)</div>
+    <ul class="muted" style="margin:0; padding-left:18px">
+      <li>Founders HQ is source of truth</li>
+      <li>No public launch until visual sign-off</li>
+      <li>New version replaces old; old archived</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-weight:900">Addendum Log</div>
+  <div style="display:flex; flex-direction:column; gap:10px">
+    {% for a in items %}
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:10px; background: rgba(255,255,255,0.03)">
+        <div class="muted">{{ a.ts }} • {{ a.status }} • {{ a.impact }}</div>
+        <pre>{{ a.change }}</pre>
+      </div>
+    {% endfor %}
+    {% if items|length == 0 %}
+      <div class="muted">No addendums yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

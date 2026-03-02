@@ -1,0 +1,53 @@
+{% extends "cca_base.html" %}
+{% block content %}
+<h2 style="margin:0 0 12px">Settings</h2>
+<div class="grid">
+  <div class="card" style="grid-column: span 7;">
+    <h3 style="margin:0 0 10px">Runtime</h3>
+    <div class="mut" style="margin-bottom:10px">Optional paths + webhook + API rate limit. These are stored in the local SQLite DB.</div>
+
+    <form method="post" action="/settings">
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:1; min-width:240px">
+          <div class="mut" style="margin-bottom:4px">ffmpeg path (optional)</div>
+          <input name="ffmpeg_path" value="{{ settings.ffmpeg_path }}" placeholder="e.g. C:\\ffmpeg\\bin\\ffmpeg.exe" />
+        </div>
+        <div style="flex:1; min-width:240px">
+          <div class="mut" style="margin-bottom:4px">ffprobe path (optional)</div>
+          <input name="ffprobe_path" value="{{ settings.ffprobe_path }}" placeholder="e.g. C:\\ffmpeg\\bin\\ffprobe.exe" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <div style="flex:1; min-width:240px">
+          <div class="mut" style="margin-bottom:4px">Export webhook URL (optional)</div>
+          <input name="webhook_export_url" value="{{ settings.webhook_export_url }}" placeholder="https://your-hub/webhook" />
+        </div>
+        <div style="width:200px">
+          <div class="mut" style="margin-bottom:4px">API limit (req/sec)</div>
+          <input name="api_rps" value="{{ settings.api_rps }}" placeholder="25" />
+        </div>
+      </div>
+
+      <button class="btn primary" type="submit">💾 Save settings</button>
+    </form>
+  </div>
+
+  <div class="card" style="grid-column: span 5;">
+    <h3 style="margin:0 0 10px">Diagnostics</h3>
+    <div class="mut">Binary detection is best-effort and depends on PATH or overrides above.</div>
+
+    <div style="margin-top:10px" class="mono">
+      <div>ffmpeg: <span class="{{ 'ok' if binaries.ffmpeg else 'bad' }}">{{ 'FOUND' if binaries.ffmpeg else 'NOT FOUND' }}</span></div>
+      <div>ffprobe: <span class="{{ 'ok' if binaries.ffprobe else 'bad' }}">{{ 'FOUND' if binaries.ffprobe else 'NOT FOUND' }}</span></div>
+    </div>
+
+    <div class="mut" style="margin-top:12px">
+      <b>Notes</b><br/>
+      - Non-WAV trim/segment/QC requires <span class="mono">ffmpeg</span>.<br/>
+      - WAV QC works even without ffmpeg using an RMS proxy (labelled as approx).<br/>
+      - Webhook is best-effort and never blocks exports.
+    </div>
+  </div>
+</div>
+{% endblock %}

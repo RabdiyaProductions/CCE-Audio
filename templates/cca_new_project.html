@@ -1,0 +1,41 @@
+{% extends "cca_base.html" %}
+{% set title="New Project" %}
+{% block content %}
+<h2 style="margin:0 0 10px">New Project Wizard</h2>
+<div class="mut">Answer these once. You can refine everything later using voice prompts + timeline edits.</div>
+<form method="post" action="{{ url_for('new_project_submit') }}">
+  <div class="grid" style="margin-top:12px">
+    <div class="card" style="grid-column: span 6;">
+      <label class="mut">Title</label>
+      <input name="title" placeholder="Working title (optional)"/>
+      <div style="height:10px"></div>
+      {% for q in questions %}
+        <div style="margin-bottom:12px">
+          <label class="mut">{{ q.label }}</label>
+          {% if q.type == "select" %}
+            <select name="{{ q.key }}">
+              {% for opt in q.options %}
+                <option value="{{ opt }}">{{ opt }}</option>
+              {% endfor %}
+            </select>
+          {% elif q.type == "textarea" %}
+            <textarea name="{{ q.key }}" placeholder="{{ q.hint }}"></textarea>
+          {% else %}
+            <input name="{{ q.key }}" placeholder="{{ q.hint }}"/>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="card" style="grid-column: span 6;">
+      <h3 style="margin:0 0 10px">What happens next</h3>
+      <ol class="mut">
+        <li>Create project</li>
+        <li>Generate pilot pack (beats + CapCut-style timeline)</li>
+        <li>Iterate with voice prompts</li>
+        <li>Export pack ZIP for Studio Hub to schedule/publish</li>
+      </ol>
+      <button class="btn primary" type="submit">✅ Create project</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

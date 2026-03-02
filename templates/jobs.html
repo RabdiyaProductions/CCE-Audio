@@ -1,0 +1,38 @@
+{% extends "cca_base.html" %}
+{% set title="Jobs" %}
+{% block content %}
+<div class="card">
+  <div class="row" style="justify-content:space-between; align-items:center">
+    <div>
+      <h2 style="margin:0">Jobs Queue</h2>
+      <div class="mut">Engine-side hub orders. Use “Tick Worker” to manually progress (demo-safe).</div>
+    </div>
+    <form method="post" action="/jobs/tick">
+      <button class="btn primary" type="submit">⏩ Tick Worker</button>
+    </form>
+  </div>
+
+  <div style="overflow:auto; margin-top:12px;">
+    <table>
+      <tr>
+        <th>Order</th><th>Kind</th><th>Status</th><th>Updated</th><th>Export</th>
+      </tr>
+      {% for j in jobs %}
+        <tr>
+          <td class="mono">{{ j.id }}</td>
+          <td class="mut">{{ j.kind }}</td>
+          <td class="mut">{{ j.status }}</td>
+          <td class="mut mono">{{ j.updated_at }}</td>
+          <td>
+            {% if j.export_filename %}
+              <a class="btn" href="/exports/{{ j.export_filename }}">Download</a>
+            {% else %}
+              <span class="mut">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

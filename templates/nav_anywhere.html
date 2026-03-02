@@ -1,0 +1,42 @@
+{% extends base_template %}
+{% block content %}
+<div class="card" style="max-width:1100px;margin:20px auto">
+  <h2 style="margin:0 0 10px 0">Navigate anywhere</h2>
+
+  <div style="margin:12px 0;padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04)">
+    <div style="font-weight:700;margin-bottom:6px">Tip</div>
+    <div style="opacity:.92;line-height:1.45">
+      Use this app’s navigation UI at <a href="/ui">/ui</a>.
+      If you copy an example URL, replace the port number with the real port (e.g. <code>http://127.0.0.1:5255/ui</code>).
+      Do not type <code>&lt;port&gt;</code> literally.
+    </div>
+  </div>
+
+  <form method="get" action="/ui" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:16px 0">
+    <div style="flex:1;min-width:220px">
+      <label class="muted" style="display:block;margin-bottom:6px">Search</label>
+      <input name="q" placeholder="Studio, FlowForm, JCT, NEC, CCE…" value="{{ q or '' }}" style="width:100%">
+    </div>
+    <div>
+      <button class="btn" type="submit">Search</button>
+      <a class="btn" href="/ui" style="margin-left:6px">Clear</a>
+    </div>
+  </form>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+    {% for row in results %}
+    <a class="card" href="{{ row.url }}" style="text-decoration:none">
+      <div style="font-weight:700">{{ row.label }}</div>
+      <div class="muted" style="margin-top:4px">{{ row.group }}</div>
+      <div class="muted" style="margin-top:8px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;font-size:12px">
+        {{ row.url }}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if not results %}
+  <div class="muted" style="margin-top:14px">No matches. Try a broader search term.</div>
+  {% endif %}
+</div>
+{% endblock %}

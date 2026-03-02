@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ meta.name }} | {{ title or "Dashboard" }}</title>
+  <style>
+    :root{
+      --bg: {{ meta.brand.background if meta.brand else "#0B1220" }};
+      --pri: {{ meta.brand.primary if meta.brand else "#F97316" }};
+      --acc: {{ meta.brand.accent if meta.brand else "#22C55E" }};
+      --card:#0f1a2e;
+      --txt:#e6eefc;
+      --mut:#9fb3d0;
+      --line:#1d2b46;
+    }
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto; background:var(--bg); color:var(--txt);}
+    a{color:var(--acc); text-decoration:none}
+    .top{display:flex;gap:12px;align-items:center; padding:14px 18px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,18,32,.95); backdrop-filter: blur(6px);}
+    .brand{font-weight:700; letter-spacing:.2px}
+    .pill{padding:4px 10px;border:1px solid var(--line); border-radius:999px; color:var(--mut); font-size:12px}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px;}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr); gap:12px;}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px;}
+    .btn{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#0c1628; color:var(--txt); cursor:pointer}
+    .btn.primary{border-color:rgba(249,115,22,.45); background:rgba(249,115,22,.12)}
+    .btn:hover{filter:brightness(1.07)}
+    input,select,textarea{width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#0b162a; color:var(--txt);}
+    textarea{min-height:120px}
+    table{width:100%; border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+    .mut{color:var(--mut)}
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 0}
+    .tab{padding:8px 10px;border:1px solid var(--line); border-radius:999px; color:var(--mut); cursor:pointer}
+    .tab.active{border-color:rgba(34,197,94,.45); color:var(--txt); background:rgba(34,197,94,.10)}
+    .hidden{display:none}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .ok{color:#86efac} .bad{color:#fca5a5}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">🎧 {{ meta.name }}</div>
+    <a class="pill" href="{{ url_for('home') }}">Home</a>
+    <a class="pill" href="{{ url_for('projects_page') }}">Projects</a>
+    <a class="pill" href="{{ url_for('jobs_page') }}">Jobs</a>
+    <a class="pill" href="{{ url_for('exports_page') }}">Exports</a>
+    <a class="pill" href="{{ url_for('export_import_page') }}">Export/Import</a>
+    <a class="pill" href="{{ url_for('settings_page') }}">Settings</a>
+    <a class="pill" href="{{ url_for('diagnostics') }}">Diagnostics</a>
+    <a class="pill" href="{{ url_for('ready') }}">Ready</a>
+    <div style="flex:1"></div>
+    <div class="pill">OpenAI: {{ "ON" if llm.openai_enabled else "OFF" }} | {{ llm.model }}</div>
+  </div>
+  <div class="wrap">
+    <div id="actionConsole" class="card" style="margin-bottom:12px; display:none">
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <div>
+          <div style="font-weight:700">Action Console</div>
+          <div id="acMeta" class="mut" style="font-size:12px"></div>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="ccClearConsole()">Clear</button>
+        </div>
+      </div>
+      <div id="acMsg" class="mut" style="margin-top:8px"></div>
+      <div id="acLinks" class="mut" style="margin-top:8px"></div>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+
+  <script>
+    function ccRenderConsole(){
+      const el = document.getElementById('actionConsole');
+      if(!el) return;
+      const raw = localStorage.getItem('cc_action_console') || '';
+      if(!raw){ el.style.display='none'; return; }
+      let j = null;
+      try{ j = JSON.parse(raw); }catch(e){ el.style.display='none'; return; }
+      el.style.display='block';
+      const meta = document.getElementById('acMeta');
+      const msg = document.getElementById('acMsg');
+      const links = document.getElementById('acLinks');
+      const ok = j.ok ? '✅' : '❌';
+      meta.textContent = `${ok} ${j.last_action||'action'} • ${j.ts||''}`;
+      msg.textContent = j.message || '';
+      links.innerHTML = '';
+      if(Array.isArray(j.links) && j.links.length){
+        const parts = j.links.map(x=>`<a href="${x.href}">${x.label||x.href}</a>`);
+        links.innerHTML = parts.join(' • ');
+      }
+    }
+    function ccSetConsole(last_action, ok, message, links){
+      const payload = { last_action, ok: !!ok, message: message||'', links: links||[], ts: new Date().toISOString() };
+      localStorage.setItem('cc_action_console', JSON.stringify(payload));
+      ccRenderConsole();
+    }
+    function ccClearConsole(){
+      localStorage.removeItem('cc_action_console');
+      ccRenderConsole();
+    }
+    window.ccSetConsole = ccSetConsole;
+    window.ccClearConsole = ccClearConsole;
+    ccRenderConsole();
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "cca_base.html" %}
+{% set title="Diagnostics" %}
+{% block content %}
+<h2 style="margin:0 0 10px">Diagnostics</h2>
+<div class="card">
+  <div class="mut">Overall: {% if results.ok %}<span class="ok">PASS ✅</span>{% else %}<span class="bad">FAIL ❌</span>{% endif %}</div>
+  <table style="margin-top:10px">
+    <tr><th>Check</th><th>Result</th><th>Detail</th></tr>
+    {% for r in results.checks %}
+      <tr>
+        <td class="mono">{{ r.name }}</td>
+        <td>{% if r.ok %}<span class="ok">PASS</span>{% else %}<span class="bad">FAIL</span>{% endif %}</td>
+        <td class="mut">{{ r.error if r.error else '' }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

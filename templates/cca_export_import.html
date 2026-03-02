@@ -1,0 +1,21 @@
+{% extends "cca_base.html" %}
+{% set title="Export/Import" %}
+{% block content %}
+<h2 style="margin:0 0 10px">Export / Import</h2>
+<div class="grid">
+  <div class="card" style="grid-column: span 6;">
+    <h3 style="margin:0 0 8px">Export flow</h3>
+    <ol class="mut">
+      <li>Create project</li>
+      <li>Generate pilot pack</li>
+      <li>Export pack ZIP</li>
+      <li>Studio Hub ingests and schedules</li>
+    </ol>
+  </div>
+  <div class="card" style="grid-column: span 6;">
+    <h3 style="margin:0 0 8px">Import flow</h3>
+    <div class="mut">Upload assets/specs from Studio Hubs or external tools. This engine stores them for project context.</div>
+    <a class="btn" href="{{ url_for('imports_page') }}">Go to Imports</a>
+  </div>
+</div>
+{% endblock %}

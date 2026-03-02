@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block content %}
+<div class="container" style="max-width:1000px;margin:24px auto;">
+  <h2>Uploads</h2>
+  <p style="opacity:.8;">Local hub file drop. Use for evidence packs, templates, and working docs.</p>
+  <form method="post" enctype="multipart/form-data" style="padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:12px;">
+    <input type="file" name="file">
+    <button type="submit">Upload</button>
+    <a href="/records" style="margin-left:12px;">Records</a>
+  </form>
+  <h3 style="margin-top:18px;">Files</h3>
+  <ul>
+    {% for f in files %}
+      <li><a href="/uploads/{{ f }}">{{ f }}</a></li>
+    {% else %}
+      <li style="opacity:.7;">No files yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

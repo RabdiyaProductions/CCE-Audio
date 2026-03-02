@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div style="font-weight:900">Add Output (JSON / Visual placeholder)</div>
+    <div class="muted">Store example outputs so your apps show “what the client gets”.</div>
+    <form method="post" action="/outputs/add">
+      <input name="label" placeholder="Label (e.g., Report v1, Avatar prompt, Audio arrangement)">
+      <select name="type">
+        <option>JSON</option>
+        <option>Markdown</option>
+        <option>Visual Placeholder</option>
+      </select>
+      <textarea name="content" placeholder="Paste JSON/markdown or describe the visual placeholder."></textarea>
+      <button type="submit">Add output</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Visual Sign-off checklist</div>
+    <ul class="muted" style="margin:0; padding-left:18px">
+      <li>At least 3 example outputs present</li>
+      <li>Brand color usage consistent</li>
+      <li>No broken links</li>
+      <li>Mobile-friendly layout</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-weight:900">Outputs</div>
+  <div style="display:flex; flex-direction:column; gap:10px">
+    {% for o in outs %}
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:10px; background: rgba(255,255,255,0.03)">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap">
+          <div style="font-weight:900">{{ o.label }}</div>
+          <div class="muted">{{ o.ts }} • {{ o.type }}</div>
+        </div>
+        <pre>{{ o.content }}</pre>
+      </div>
+    {% endfor %}
+    {% if outs|length == 0 %}
+      <div class="muted">No outputs yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div style="font-weight:900">Create Task (AI employee work order)</div>
+    <div class="muted">This simulates autonomous agent operation safely: tasks + roles + movement.</div>
+    <form method="post" action="/agentops/add">
+      <input name="title" placeholder="Task title (e.g., tighten layout, add output examples)">
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted">Priority</div>
+          <select name="priority">
+            <option>P0</option><option selected>P1</option><option>P2</option><option>P3</option>
+          </select>
+        </div>
+        <div style="flex:2">
+          <div class="muted">Role</div>
+          <select name="role">
+            <option value="">(unassigned)</option>
+            {% for r in roles %}
+              <option value="{{ r.key }}">{{ r.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit">Add task</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Autonomy boundaries</div>
+    <ul class="muted" style="margin:0; padding-left:18px">
+      <li>Agents create tasks, checklists, and reports</li>
+      <li>No code changes without founder approval + Codex</li>
+      <li>No public promotion</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-weight:900">Task Queue</div>
+  <div class="muted">Move tasks across statuses.</div>
+  <div style="display:flex; flex-direction:column; gap:10px">
+    {% for t in tasks %}
+      <div style="border:1px solid rgba(255,255,255,0.10); border-radius:14px; padding:10px; background: rgba(255,255,255,0.03)">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap">
+          <div style="font-weight:900">{{ t.title }}</div>
+          <div class="muted">{{ t.priority }} • {{ t.status }} • {{ t.ts }}</div>
+        </div>
+        <div class="muted">Role: {{ t.role or "—" }} • ID: {{ t.id }}</div>
+        <form method="post" action="/agentops/move" class="row">
+          <input type="hidden" name="id" value="{{ t.id }}">
+          <select name="status" style="flex:1">
+            <option {% if t.status=="Backlog" %}selected{% endif %}>Backlog</option>
+            <option {% if t.status=="Doing" %}selected{% endif %}>Doing</option>
+            <option {% if t.status=="Blocked" %}selected{% endif %}>Blocked</option>
+            <option {% if t.status=="Done" %}selected{% endif %}>Done</option>
+          </select>
+          <button type="submit">Move</button>
+        </form>
+      </div>
+    {% endfor %}
+    {% if tasks|length == 0 %}
+      <div class="muted">No tasks yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

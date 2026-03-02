@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <div style="font-weight:900">MVP Summary</div>
+    <div class="muted">Internal gold standard baseline. Keep it reviewable, measurable, and link-based.</div>
+    <form method="post" action="/save-summary">
+      <textarea name="summary">{{ state.summary }}</textarea>
+      <div class="row">
+        <div style="flex:1">
+          <div class="muted">Readiness score</div>
+          <input name="score" type="number" min="0" max="100" value="{{ state.readiness.score }}">
+        </div>
+        <div style="flex:2">
+          <div class="muted">Readiness notes</div>
+          <input name="notes" value="{{ state.readiness.notes }}">
+        </div>
+      </div>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Brand & Presentation (placeholders)</div>
+    <div class="muted">Use these as the “visual sign-off” checklist before any public launch.</div>
+    <ul class="muted" style="margin:0; padding-left:18px">
+      <li>Banner/hero graphic placeholder</li>
+      <li>Icon/logo placeholder</li>
+      <li>Consistent layout spacing and CTA area</li>
+      <li>Output examples visible (even if mocked)</li>
+    </ul>
+    <div class="row">
+      <span class="pill">Primary {{ meta.brand.primary }}</span>
+      <span class="pill">Accent {{ meta.brand.accent }}</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900">Founders HQ Links (optional)</div>
+    <div class="muted">Populate when you upload to GitHub / releases.</div>
+    <div class="muted">Key: {{ meta.key }}</div>
+    <div class="muted">Suggested integration: Founders HQ tile → link to this MVP zip/repo.</div>
+  </div>
+</div>
+{% endblock %}
